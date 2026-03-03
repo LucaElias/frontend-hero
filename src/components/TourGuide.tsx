@@ -17,7 +17,7 @@ export const TourGuide: React.FC = () => {
     const steps: Step[] = [
         {
             target: 'body',
-            content: 'Willkommen bei der CSS Werkstatt! Dies ist eine Simulations-Umgebung, in der du lernst, wie man echte Frontend-Probleme löst.',
+            content: 'Willkommen bei Frontend Hero! Dies ist eine Simulations-Umgebung, in der du lernst, wie man echte Frontend-Probleme löst.',
             placement: 'center',
             disableBeacon: true,
         },

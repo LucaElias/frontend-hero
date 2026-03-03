@@ -9,7 +9,7 @@ export const SCENARIOS: Scenario[] = [
             sender: 'Dein Mentor (Alex)',
             role: 'Junior Frontend Dev',
             subject: 'Dein erster Tag: So funktioniert das Tool',
-            message: `Hallo! Schön, dass du da bist. In der CSS Werkstatt lernst du, Fehler im Code zu finden und zu beheben.
+            message: `Hallo! Schön, dass du da bist. In Frontend Hero lernst du, Fehler im Code zu finden und zu beheben.
 
 Jedes Ticket hat drei Schritte:
 1. "Posteingang" (hier): Lies die Anforderungen.

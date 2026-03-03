@@ -40,7 +40,7 @@ export const Shell: React.FC = () => {
             <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-gray-900 z-50 flex items-center px-4 justify-between border-b border-gray-800">
                 <div className="flex items-center gap-2 text-white font-bold tracking-tight">
                     <Terminal className="w-5 h-5 text-indigo-400" />
-                    CSS Werkstatt
+                    Frontend Hero
                 </div>
                 <button
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -57,13 +57,13 @@ export const Shell: React.FC = () => {
             )}>
                 <div className="hidden lg:flex p-4 border-b border-gray-800 items-center gap-2 text-white font-bold tracking-tight">
                     <Terminal className="w-5 h-5 text-indigo-400" />
-                    CSS Werkstatt
+                    Frontend Hero
                 </div>
                 {/* Mobile Sidebar Header with Close Button */}
                 <div className="flex lg:hidden p-4 border-b border-gray-800 items-center justify-between text-white font-bold tracking-tight">
                     <div className="flex items-center gap-2">
                         <Terminal className="w-5 h-5 text-indigo-400" />
-                        CSS Werkstatt
+                        Frontend Hero
                     </div>
                     <button onClick={() => setIsSidebarOpen(false)} className="p-1 hover:bg-gray-800 rounded-md text-gray-400 hover:text-white">
                         <X className="w-5 h-5" />
