@@ -34,6 +34,7 @@ export const ShadowPreview: React.FC<ShadowPreviewProps> = ({ html, css }) => {
             font-family: system-ui, -apple-system, sans-serif;
             color: #333;
             overflow: hidden; /* Host shouldn't scroll, inner div should */
+            pointer-events: auto;
           }
           *, *::before, *::after {
             box-sizing: border-box;
@@ -43,7 +44,7 @@ export const ShadowPreview: React.FC<ShadowPreviewProps> = ({ html, css }) => {
           ${css}
         </style>
         
-        <div style="padding: 24px; height: 100%; overflow: auto; position: relative;">
+        <div style="padding: 24px; height: 100%; overflow: auto; position: relative; pointer-events: auto;">
             ${html}
         </div>
       `;

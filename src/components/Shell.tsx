@@ -7,6 +7,10 @@ import { ScenarioBriefing } from './ScenarioBriefing';
 import { DiagnosticTool } from './DiagnosticTool';
 import { Workbench } from './Workbench';
 import { SuccessView } from './SuccessView';
+import { TourGuide } from './TourGuide';
+import { ScenarioBuilder } from './ScenarioBuilder';
+import { PlusCircle, Upload } from 'lucide-react';
+import type { Scenario } from '../types/Scenario';
 
 export const Shell: React.FC = () => {
     const {
@@ -31,6 +35,7 @@ export const Shell: React.FC = () => {
 
     return (
         <div className="flex h-screen bg-gray-100 text-gray-900 font-sans overflow-hidden">
+            <TourGuide />
             {/* Mobile Header */}
             <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-gray-900 z-50 flex items-center px-4 justify-between border-b border-gray-800">
                 <div className="flex items-center gap-2 text-white font-bold tracking-tight">
@@ -41,7 +46,7 @@ export const Shell: React.FC = () => {
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                     className="p-2 text-gray-300 hover:text-white"
                 >
-                    {isSidebarOpen ? <X /> : <Menu />}
+                    <Menu />
                 </button>
             </div>
 
@@ -54,12 +59,22 @@ export const Shell: React.FC = () => {
                     <Terminal className="w-5 h-5 text-indigo-400" />
                     CSS Werkstatt
                 </div>
+                {/* Mobile Sidebar Header with Close Button */}
+                <div className="flex lg:hidden p-4 border-b border-gray-800 items-center justify-between text-white font-bold tracking-tight">
+                    <div className="flex items-center gap-2">
+                        <Terminal className="w-5 h-5 text-indigo-400" />
+                        CSS Werkstatt
+                    </div>
+                    <button onClick={() => setIsSidebarOpen(false)} className="p-1 hover:bg-gray-800 rounded-md text-gray-400 hover:text-white">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
 
                 <div className="flex-1 overflow-y-auto py-4">
                     <div className="px-4 text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
                         Tickets
                     </div>
-                    {SCENARIOS.map(scenario => {
+                    {SCENARIOS.map((scenario) => {
                         const isActive = currentScenarioId === scenario.id;
                         const isCompleted = completedScenarios.includes(scenario.id);
 
@@ -70,28 +85,25 @@ export const Shell: React.FC = () => {
                                     startScenario(scenario.id);
                                     setIsSidebarOpen(false);
                                 }}
-                                style={{
-                                    backgroundColor: isActive ? '#4338ca' : 'transparent',
-                                    color: isActive ? '#ffffff' : '#cbd5e1'
-                                }}
                                 className={clsx(
-                                    "w-full text-left px-4 py-3 flex items-center gap-3 transition-colors border-l-4",
+                                    "w-full text-left px-4 !py-5 flex items-center gap-3 transition-all border-l-4 border-b-2 border-gray-700/50",
                                     isActive
-                                        ? "border-white shadow-md font-bold"
-                                        : "hover:bg-gray-800 hover:text-white border-transparent",
-                                    !isActive && !isCompleted && "opacity-90"
+                                        ? "bg-indigo-700/50 border-white shadow-md font-bold text-white"
+                                        : "hover:bg-gray-800 hover:text-white border-transparent text-slate-300"
                                 )}
                             >
                                 <div className={clsx(
-                                    "w-2 h-2 rounded-full",
+                                    "w-2 h-2 rounded-full shrink-0",
                                     isCompleted ? "bg-green-500" :
                                         isActive ? "bg-amber-400 animate-pulse" : "bg-gray-600"
                                 )} />
                                 <div className="flex-1 truncate">
-                                    <div className="font-medium truncate">{scenario.title}</div>
-                                    <div className="text-xs opacity-60 flex items-center gap-1">
+                                    <div className="font-medium truncate flex items-center gap-2">
+                                        {scenario.title}
+                                    </div>
+                                    <div className="text-[11px] font-medium text-gray-400 flex items-center gap-1">
                                         {scenario.difficulty}
-                                        {isCompleted && <CheckCircle className="w-3 h-3 text-green-500 inline ml-1" />}
+                                        {isCompleted && <CheckCircle className="w-3.5 h-3.5 text-green-500 inline ml-1" />}
                                     </div>
                                 </div>
                             </button>
@@ -99,8 +111,48 @@ export const Shell: React.FC = () => {
                     })}
                 </div>
 
-                <div className="p-4 border-t border-gray-800 text-xs text-gray-500 text-center">
-                    Simulierte Umgebung v1.0
+                <div className="p-4 border-t border-gray-800 text-xs text-gray-500 flex flex-col gap-3">
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => {
+                                setPhase('builder');
+                                setIsSidebarOpen(false);
+                            }}
+                            className="flex items-center justify-center gap-2 flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-all font-bold shadow-md active:scale-95"
+                            title="Neues Ticket erstellen"
+                        >
+                            <PlusCircle className="w-4 h-4" />
+                            Erstellen
+                        </button>
+                        <label className="flex items-center justify-center gap-2 flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-md transition-all font-bold shadow-md cursor-pointer active:scale-95" title="Ticket als JSON importieren">
+                            <Upload className="w-4 h-4" />
+                            Import
+                            <input
+                                type="file"
+                                className="hidden"
+                                accept=".json"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    const reader = new FileReader();
+                                    reader.onload = (event) => {
+                                        try {
+                                            const scenario = JSON.parse(event.target?.result as string) as Scenario;
+                                            if (!SCENARIOS.find(s => s.id === scenario.id)) {
+                                                SCENARIOS.push(scenario);
+                                            }
+                                            startScenario(scenario.id);
+                                            setIsSidebarOpen(false);
+                                        } catch (err) {
+                                            alert("Fehler beim Importieren des Tickets.");
+                                        }
+                                    };
+                                    reader.readAsText(file);
+                                }}
+                            />
+                        </label>
+                    </div>
+                    <div className="text-center opacity-50">Simulierte Umgebung v1.0</div>
                 </div>
             </div>
 
@@ -121,12 +173,13 @@ export const Shell: React.FC = () => {
                             Lade Szenarien...
                         </div>
                     ) : (
-                        <div className="h-full w-full mx-auto bg-white flex flex-col">
+                        <div className="h-full w-full bg-white flex flex-col">
                             {/* Navigation Tabs */}
-                            <div className="flex items-center border-b border-gray-200 bg-gray-50 px-6 pt-4 gap-2 shrink-0">
+                            <div className="flex items-center border-b border-gray-200 bg-gray-50 px-6 pt-4 gap-2 shrink-0 overflow-x-auto no-scrollbar">
                                 {Phases.map(p => (
                                     <button
                                         key={p.id}
+                                        id={`tour-${p.id}`}
                                         onClick={() => setPhase(p.id)}
                                         className={clsx(
                                             "flex items-center gap-2 px-4 py-3 rounded-t-lg text-sm font-bold transition-all border-t border-x relative -mb-px",
@@ -141,8 +194,10 @@ export const Shell: React.FC = () => {
                                 ))}
                             </div>
 
-                            <div className="flex-1 overflow-hidden relative">
-                                {renderPhase(phase, currentScenario, setPhase, addMistake)}
+                            <div className="flex-1 overflow-hidden relative bg-white">
+                                <div key={phase} className="h-full w-full animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out">
+                                    {renderPhase(phase, currentScenario, setPhase, addMistake)}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -165,6 +220,9 @@ const renderPhase = (phase: string, currentScenario: any, setPhase: any, addMist
     }
     if (phase === 'completed') {
         return <SuccessView />;
+    }
+    if (phase === 'builder') {
+        return <ScenarioBuilder />;
     }
     return null;
 }

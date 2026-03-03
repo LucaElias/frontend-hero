@@ -5,6 +5,7 @@ import { ShadowPreview } from './ShadowPreview';
 import { useGameStore } from '../store/useGameStore';
 import type { Scenario } from '../types/Scenario';
 import clsx from 'clsx';
+import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels';
 
 interface Props {
     scenario: Scenario;
@@ -16,6 +17,16 @@ export const Workbench: React.FC<Props> = ({ scenario }) => {
     const [feedback, setFeedback] = useState<string | null>(null);
     const [hintsRevealed, setHintsRevealed] = useState(0);
     const [showHelp, setShowHelp] = useState(false);
+    const [isDesktop, setIsDesktop] = useState(true);
+
+    // Responsive layout Check
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(min-width: 1024px)'); // lg breakpoint
+        setIsDesktop(mediaQuery.matches);
+        const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+        mediaQuery.addEventListener('change', handler);
+        return () => mediaQuery.removeEventListener('change', handler);
+    }, []);
 
     // Reset state when scenario changes
     useEffect(() => {
@@ -49,31 +60,38 @@ export const Workbench: React.FC<Props> = ({ scenario }) => {
             // For Scenario 2: check for padding on .info-box
             // For Scenario 3: check for display: flex on .gallery
 
-            // We look at the scenario logic.
             let isCorrect = false;
             let hint = "";
 
             if (!hasChanged) {
                 hint = "Du hast noch nichts geändert!";
             } else {
-                // specific checks based on scenario ID
-                if (scenario.id === '1-invisible-button') {
-                    if (userCss.includes('background-color') && userCss.includes('.cta-button')) {
-                        isCorrect = true;
-                    } else {
-                        hint = "Hast du dem .cta-button eine background-color gegeben?";
+                // Dynamic check based on required selectors and target properties
+                isCorrect = true;
+
+                if (scenario.solution.targetCssProperties) {
+                    for (const [selector, props] of Object.entries(scenario.solution.targetCssProperties)) {
+                        if (!userCss.includes(selector)) {
+                            isCorrect = false;
+                            hint = `Fehlt da noch der Selektor "${selector}"?`;
+                            break;
+                        }
+                        for (const prop of Object.keys(props)) {
+                            if (!userCss.includes(prop) && !userCss.replace(/\s/g, '').includes(prop.replace(/\s/g, ''))) {
+                                isCorrect = false;
+                                hint = `Überprüfe die Eigenschaft "${prop}" für ${selector}.`;
+                                break;
+                            }
+                        }
+                        if (!isCorrect) break;
                     }
-                } else if (scenario.id === '2-sticky-text') {
-                    if (userCss.includes('padding') && userCss.includes('.info-box')) {
-                        isCorrect = true;
-                    } else {
-                        hint = "Versuch es mal mit 'padding' auf der .info-box.";
-                    }
-                } else if (scenario.id === '3-broken-gallery') {
-                    if (userCss.includes('display: flex') && userCss.includes('.gallery')) {
-                        isCorrect = true;
-                    } else {
-                        hint = "Die Galerie (.gallery) braucht ein anderes Display-Verhalten.";
+                } else if (scenario.solution.requiredSelectors && scenario.solution.requiredSelectors.length > 0) {
+                    for (const selector of scenario.solution.requiredSelectors) {
+                        if (!userCss.includes(selector)) {
+                            isCorrect = false;
+                            hint = `Fehlt da noch der Selektor "${selector}"?`;
+                            break;
+                        }
                     }
                 }
             }
@@ -95,7 +113,7 @@ export const Workbench: React.FC<Props> = ({ scenario }) => {
             <div className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm z-10 shrink-0">
                 <div className="flex items-center gap-4">
                     <h2 className="font-bold text-lg text-slate-800 tracking-tight">{scenario.title}</h2>
-                    <div className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-slate-100 rounded text-slate-500">Workspace</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider px-2 px-x py-1 bg-indigo-50 text-indigo-700 rounded-md border border-indigo-100">Workspace</div>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -116,10 +134,11 @@ export const Workbench: React.FC<Props> = ({ scenario }) => {
 
                     <button
                         onClick={handleReset}
-                        className="p-2.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors"
-                        title="Code zurücksetzen"
+                        className="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-md transition-colors text-sm font-medium"
+                        title="Code auf Startzustand zurücksetzen"
                     >
-                        <RotateCcw className="w-5 h-5" />
+                        <RotateCcw className="w-4 h-4" />
+                        <span className="hidden sm:inline">Neustart</span>
                     </button>
                     <button
                         onClick={handleValidate}
@@ -152,11 +171,14 @@ export const Workbench: React.FC<Props> = ({ scenario }) => {
                         </h3>
                         <div className="grid gap-3">
                             {scenario.hints?.slice(0, hintsRevealed).map((hint, i) => (
-                                <div key={i} className="bg-white border border-amber-100 p-3 rounded-lg shadow-sm flex gap-3 animate-in fade-in">
-                                    <div className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold self-start whitespace-nowrap">
-                                        {hint.title}
+                                <div key={i} className="bg-white border border-amber-100 p-3 rounded-lg shadow-sm flex flex-col gap-2 animate-in fade-in">
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold self-start whitespace-nowrap">
+                                            Stufe {hint.level || i + 1}
+                                        </div>
+                                        <div className="font-semibold text-sm text-gray-800">{hint.title}</div>
                                     </div>
-                                    <p className="text-gray-700 text-sm">{hint.text}</p>
+                                    <p className="text-gray-700 text-sm mt-1">{hint.text}</p>
                                 </div>
                             ))}
 
@@ -165,7 +187,7 @@ export const Workbench: React.FC<Props> = ({ scenario }) => {
                                     onClick={handleRevealHint}
                                     className="bg-white border border-dashed border-amber-300 text-amber-600 p-3 rounded-lg text-sm font-medium hover:bg-amber-100 hover:border-amber-400 transition-colors text-left"
                                 >
-                                    {hintsRevealed === 0 ? "Ersten Hinweis anzeigen" : "Nächsten Hinweis anzeigen"}
+                                    Tipp Stufe {hintsRevealed + 1} freischalten
                                 </button>
                             )}
                         </div>
@@ -174,50 +196,57 @@ export const Workbench: React.FC<Props> = ({ scenario }) => {
             )}
 
             {/* Main Split View */}
-            <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
-                {/* Editor Pane */}
-                <div className="h-1/2 lg:h-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-gray-200 flex flex-col">
-                    <div className="flex-1 relative min-h-0">
-                        <Editor
-                            height="100%"
-                            defaultLanguage="css"
-                            language="css"
-                            value={userCss || scenario.solution.initialCss} // Fallback
-                            onChange={(value) => updateUserCss(value || '')}
-                            theme="vs-light"
-                            options={{
-                                minimap: { enabled: false },
-                                fontSize: 14,
-                                lineNumbers: 'on',
-                                scrollBeyondLastLine: false,
-                                automaticLayout: true,
-                                padding: { top: 20 }
-                            }}
-                        />
+            <div className="flex-1 overflow-hidden relative">
+                <PanelGroup orientation={isDesktop ? "horizontal" : "vertical"} className="w-full h-full">
+                    {/* Editor Pane */}
+                    <Panel defaultSize={50} minSize={20} className="flex flex-col">
+                        <div className="flex-1 relative min-h-0">
+                            <Editor
+                                height="100%"
+                                defaultLanguage="css"
+                                language="css"
+                                value={userCss || scenario.solution.initialCss} // Fallback
+                                onChange={(value) => updateUserCss(value || '')}
+                                theme="vs-light"
+                                options={{
+                                    minimap: { enabled: false },
+                                    fontSize: 14,
+                                    lineNumbers: 'on',
+                                    scrollBeyondLastLine: false,
+                                    automaticLayout: true,
+                                    padding: { top: 20 }
+                                }}
+                            />
 
-                        {feedback && (
-                            <div className="absolute bottom-4 left-4 right-4 bg-red-50 border border-red-200 text-red-800 p-3 rounded shadow-lg animate-in fade-in slide-in-from-bottom-2 z-10">
-                                <strong>Hinweis:</strong> {feedback}
+                            {feedback && (
+                                <div className="absolute bottom-4 left-4 right-4 bg-red-50 border border-red-200 text-red-800 p-3 rounded shadow-lg animate-in fade-in slide-in-from-bottom-2 z-10">
+                                    <strong>Hinweis:</strong> {feedback}
+                                </div>
+                            )}
+                        </div>
+                    </Panel>
+
+                    <PanelResizeHandle className="relative flex items-center justify-center bg-slate-200 hover:bg-indigo-300 transition-colors w-full h-2 lg:w-2 lg:h-full cursor-row-resize lg:cursor-col-resize z-20 group">
+                        {/* Visual Grip */}
+                        <div className="absolute bg-slate-400 group-hover:bg-white rounded-full lg:w-1 lg:h-8 w-8 h-1 transition-colors" />
+                    </PanelResizeHandle>
+
+                    {/* Preview Pane */}
+                    <Panel defaultSize={50} minSize={20} className="bg-gray-50 flex flex-col p-4 lg:p-6 min-h-0">
+                        <div className="flex-1 relative bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                            <div className="h-8 bg-gray-50 border-b border-gray-100 flex items-center px-4 gap-1.5 shrink-0">
+                                <div className="w-2.5 h-2.5 rounded-full bg-red-400/50"></div>
+                                <div className="w-2.5 h-2.5 rounded-full bg-yellow-400/50"></div>
+                                <div className="w-2.5 h-2.5 rounded-full bg-green-400/50"></div>
+                                <div className="ml-2 text-xs text-gray-400 font-mono">Vorschau</div>
                             </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Preview Pane */}
-                <div className="h-1/2 lg:h-full lg:w-1/2 bg-gray-50 p-4 lg:p-6 flex flex-col min-h-0">
-                    <div className="flex-1 relative bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-                        <div className="h-8 bg-gray-50 border-b border-gray-100 flex items-center px-4 gap-1.5 shrink-0">
-                            <div className="w-2.5 h-2.5 rounded-full bg-red-400/50"></div>
-                            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400/50"></div>
-                            <div className="w-2.5 h-2.5 rounded-full bg-green-400/50"></div>
-                            <div className="ml-2 text-xs text-gray-400 font-mono">Vorschau</div>
+                            <div className="relative flex-1 w-full h-full overflow-hidden">
+                                <ShadowPreview html={scenario.solution.initialHtml} css={userCss} />
+                            </div>
                         </div>
-                        <div className="relative flex-1 w-full h-full overflow-hidden">
-                            <ShadowPreview html={scenario.solution.initialHtml} css={userCss} />
-                        </div>
-                    </div>
-                </div>
+                    </Panel>
+                </PanelGroup>
             </div>
-        </div>
+        </div >
     );
 };

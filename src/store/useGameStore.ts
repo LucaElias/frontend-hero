@@ -8,6 +8,7 @@ interface GameState {
     userCss: string;
     completedScenarios: string[];
     mistakes: number;
+    hasSeenTutorial: boolean;
 
     startScenario: (scenarioId: string) => void;
     setPhase: (phase: Phase) => void;
@@ -16,6 +17,7 @@ interface GameState {
     addMistake: () => void;
     resetMistakes: () => void;
     nextScenario: () => void;
+    setHasSeenTutorial: (val: boolean) => void;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -24,6 +26,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     userCss: '',
     completedScenarios: [],
     mistakes: 0,
+    hasSeenTutorial: localStorage.getItem('hasSeenTutorial') === 'true',
 
     startScenario: (scenarioId: string) => {
         const scenario = SCENARIOS.find(s => s.id === scenarioId);
@@ -59,9 +62,11 @@ export const useGameStore = create<GameState>((set, get) => ({
 
         if (nextScenario) {
             state.startScenario(nextScenario.id);
-        } else {
-            // End of game or return to menu
-            set({ currentScenarioId: null, phase: 'briefing' }); // Simple reset for now
         }
+    },
+
+    setHasSeenTutorial: (val: boolean) => {
+        localStorage.setItem('hasSeenTutorial', val ? 'true' : 'false');
+        set({ hasSeenTutorial: val });
     }
 }));

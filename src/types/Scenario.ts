@@ -1,4 +1,4 @@
-export type Phase = 'briefing' | 'diagnosis' | 'workbench' | 'review' | 'completed';
+export type Phase = 'briefing' | 'diagnosis' | 'workbench' | 'review' | 'completed' | 'builder';
 
 export interface ScenarioBriefing {
     sender: string;
@@ -40,6 +40,7 @@ export interface Scenario {
     diagnosis: ScenarioDiagnosis;
     solution: ScenarioSolution;
     hints: {
+        level: 1 | 2 | 3;
         title: string;
         text: string;
     }[];
