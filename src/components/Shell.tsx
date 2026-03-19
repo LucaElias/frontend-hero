@@ -20,6 +20,7 @@ export const Shell: React.FC = () => {
         completedScenarios,
         studentName,
         loginStudent,
+        logoutStudent,
         startScenario,
         setPhase,
         addMistake,
@@ -30,6 +31,8 @@ export const Shell: React.FC = () => {
     const [tempName, setTempName] = useState('');
     const [tempPassword, setTempPassword] = useState('');
     const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [showTeacherPinModal, setShowTeacherPinModal] = useState(false);
+    const [teacherPinInput, setTeacherPinInput] = useState('');
     const currentScenario = SCENARIOS.find(s => s.id === currentScenarioId);
 
     // Initial State: No scenario selected? Or auto-select first?
@@ -171,29 +174,38 @@ export const Shell: React.FC = () => {
                         </div>
                         <div className="flex flex-col gap-1.5">
                             {studentName && (
-                                <button
-                                    onClick={() => {
-                                        if (confirm("Möchtest du wirklich deinen gesamten Fortschritt löschen? Dies betrifft auch die Cloud-Speicherung.")) {
-                                            fullReset();
-                                            window.location.reload();
-                                        }
-                                    }}
-                                    className="flex items-center gap-2 text-left hover:text-red-400 transition-colors py-1 group"
-                                    title="Alle erledigten Aufgaben zurücksetzen"
-                                >
-                                    <RotateCcw className="w-3.5 h-3.5 group-hover:rotate-[-45deg] transition-transform" />
-                                    Zurücksetzen
-                                </button>
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            if (confirm("Möchtest du wirklich deinen gesamten Fortschritt löschen? Dies betrifft auch die Cloud-Speicherung.")) {
+                                                fullReset();
+                                                window.location.reload();
+                                            }
+                                        }}
+                                        className="flex items-center gap-2 text-left hover:text-red-400 transition-colors py-1 group"
+                                        title="Alle erledigten Aufgaben zurücksetzen"
+                                    >
+                                        <RotateCcw className="w-3.5 h-3.5 group-hover:rotate-[-45deg] transition-transform" />
+                                        Zurücksetzen
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (confirm("Möchtest du dich wirklich abmelden? Dein Fortschritt bleibt in der Cloud gespeichert.")) {
+                                                logoutStudent();
+                                            }
+                                        }}
+                                        className="flex items-center gap-2 text-left hover:text-red-400 transition-colors py-1 group"
+                                        title="Vom aktuellen Profil abmelden"
+                                    >
+                                        <X className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                                        Abmelden
+                                    </button>
+                                </>
                             )}
                             <button
                                 onClick={() => {
-                                    const teacherPin = import.meta.env.VITE_TEACHER_PIN || 'admin';
-                                    const pin = prompt(`Bitte Lehrer-PIN eingeben (Standard: ${teacherPin === 'admin' ? 'admin' : '****'}):`);
-                                    if (pin === teacherPin) {
-                                        setPhase('teacher');
-                                    } else if (pin) {
-                                        alert("Falscher PIN.");
-                                    }
+                                    setShowTeacherPinModal(true);
+                                    setIsSidebarOpen(false);
                                 }}
                                 className="flex items-center gap-2 text-left hover:text-indigo-400 transition-colors py-1"
                                 title="Lehrer-Dashboard öffnen"
@@ -208,12 +220,14 @@ export const Shell: React.FC = () => {
             </div>
 
             {/* Overlay for mobile sidebar */}
-            {isSidebarOpen && (
-                <div
-                    className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-                    onClick={() => setIsSidebarOpen(false)}
-                />
-            )}
+            {
+                isSidebarOpen && (
+                    <div
+                        className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+                        onClick={() => setIsSidebarOpen(false)}
+                    />
+                )
+            }
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col overflow-hidden relative pt-16 lg:pt-0">
@@ -255,63 +269,109 @@ export const Shell: React.FC = () => {
                 </div>
             </div>
             {/* Name Entry Modal */}
-            {!studentName && (
-                <div className="fixed inset-0 bg-gray-900/90 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95 duration-300">
-                        <div className="flex justify-center mb-6">
-                            <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600">
-                                <Terminal className="w-10 h-10" />
+            {
+                !studentName && (
+                    <div className="fixed inset-0 bg-gray-900/90 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95 duration-300">
+                            <div className="flex justify-center mb-6">
+                                <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600">
+                                    <Terminal className="w-10 h-10" />
+                                </div>
                             </div>
+                            <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Willkommen bei Frontend Hero!</h2>
+                            <p className="text-gray-600 text-center mb-8">Gib deinen Namen und ein Passwort ein, um deinen Fortschritt in der Cloud zu speichern oder fortzusetzen.</p>
+
+                            <form onSubmit={async (e) => {
+                                e.preventDefault();
+                                if (tempName.trim() && tempPassword.trim()) {
+                                    setIsLoggingIn(true);
+                                    await loginStudent(tempName.trim(), tempPassword.trim());
+                                    setIsLoggingIn(false);
+
+                                    const store = useGameStore.getState();
+                                    const nextScenario = SCENARIOS.find(s => !store.completedScenarios.includes(s.id)) || SCENARIOS[0];
+                                    store.startScenario(nextScenario.id);
+                                }
+                            }}>
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    value={tempName}
+                                    onChange={(e) => setTempName(e.target.value)}
+                                    placeholder="Dein Name..."
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-indigo-500 focus:outline-none transition-colors mb-3 text-lg"
+                                    required
+                                    disabled={isLoggingIn}
+                                />
+                                <input
+                                    type="password"
+                                    value={tempPassword}
+                                    onChange={(e) => setTempPassword(e.target.value)}
+                                    placeholder="Passwort / PIN (z.B. 1234)"
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-indigo-500 focus:outline-none transition-colors mb-4 text-lg"
+                                    required
+                                    disabled={isLoggingIn}
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={isLoggingIn}
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] disabled:opacity-75 disabled:active:scale-100"
+                                >
+                                    {isLoggingIn ? 'Lädt...' : 'Jetzt starten / Login'}
+                                </button>
+                            </form>
+                            <p className="text-center text-xs text-gray-400 mt-6">
+                                Dein Name wird für das Teacher-Dashboard gespeichert.
+                            </p>
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Willkommen bei Frontend Hero!</h2>
-                        <p className="text-gray-600 text-center mb-8">Gib deinen Namen und ein Passwort ein, um deinen Fortschritt in der Cloud zu speichern oder fortzusetzen.</p>
-
-                        <form onSubmit={async (e) => {
-                            e.preventDefault();
-                            if (tempName.trim() && tempPassword.trim()) {
-                                setIsLoggingIn(true);
-                                await loginStudent(tempName.trim(), tempPassword.trim());
-                                setIsLoggingIn(false);
-
-                                const store = useGameStore.getState();
-                                const nextScenario = SCENARIOS.find(s => !store.completedScenarios.includes(s.id)) || SCENARIOS[0];
-                                store.startScenario(nextScenario.id);
-                            }
-                        }}>
-                            <input
-                                autoFocus
-                                type="text"
-                                value={tempName}
-                                onChange={(e) => setTempName(e.target.value)}
-                                placeholder="Dein Name..."
-                                className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-indigo-500 focus:outline-none transition-colors mb-3 text-lg"
-                                required
-                                disabled={isLoggingIn}
-                            />
-                            <input
-                                type="password"
-                                value={tempPassword}
-                                onChange={(e) => setTempPassword(e.target.value)}
-                                placeholder="Passwort / PIN (z.B. 1234)"
-                                className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-indigo-500 focus:outline-none transition-colors mb-4 text-lg"
-                                required
-                                disabled={isLoggingIn}
-                            />
-                            <button
-                                type="submit"
-                                disabled={isLoggingIn}
-                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] disabled:opacity-75 disabled:active:scale-100"
-                            >
-                                {isLoggingIn ? 'Lädt...' : 'Jetzt starten / Login'}
-                            </button>
-                        </form>
-                        <p className="text-center text-xs text-gray-400 mt-6">
-                            Dein Name wird für das Teacher-Dashboard gespeichert.
-                        </p>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+
+            {/* Teacher PIN Modal */}
+            {
+                showTeacherPinModal && (
+                    <div className="fixed inset-0 bg-gray-900/90 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-200">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-bold flex items-center gap-2">
+                                    <Shield className="w-5 h-5 text-indigo-600" />
+                                    Lehrer-Ansicht
+                                </h3>
+                                <button onClick={() => { setShowTeacherPinModal(false); setTeacherPinInput(''); }} className="text-gray-400 hover:text-gray-600">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-4">Bitte gib den Lehrer-PIN ein, um das Dashboard zu öffnen.</p>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const teacherPin = import.meta.env.VITE_TEACHER_PIN || 'admin';
+                                if (teacherPinInput === teacherPin) {
+                                    setPhase('teacher');
+                                    setShowTeacherPinModal(false);
+                                    setTeacherPinInput('');
+                                } else {
+                                    alert("Falscher PIN.");
+                                }
+                            }}>
+                                <input
+                                    autoFocus
+                                    type="password"
+                                    value={teacherPinInput}
+                                    onChange={e => setTeacherPinInput(e.target.value)}
+                                    placeholder="PIN eingeben..."
+                                    className="w-full px-4 py-2 rounded-xl border-2 border-gray-100 focus:border-indigo-500 focus:outline-none transition-colors mb-4"
+                                    required
+                                />
+                                <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all">
+                                    Entsperren
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 };
 

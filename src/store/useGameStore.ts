@@ -25,6 +25,7 @@ interface GameState {
     fullReset: () => void;
     importProgress: (data: string) => boolean;
     loginStudent: (name: string, password: string) => Promise<void>;
+    logoutStudent: () => void;
     syncProgress: () => Promise<void>;
 }
 
@@ -152,6 +153,16 @@ export const useGameStore = create<GameState>()(
                     });
                     get().syncProgress?.();
                 }
+            },
+
+            logoutStudent: () => {
+                set({
+                    studentName: null,
+                    sessionId: null,
+                    completedScenarios: [],
+                    hasSeenTutorial: false,
+                    phase: 'briefing'
+                });
             },
 
             syncProgress: async () => {
