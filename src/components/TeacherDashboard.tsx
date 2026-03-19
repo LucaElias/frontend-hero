@@ -84,14 +84,28 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
                         <h1 className="text-xl font-bold tracking-tight">Lehrer Dashboard</h1>
                     </div>
                 </div>
-                <button
-                    onClick={fetchData}
-                    disabled={loading}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-md transition-all text-sm font-medium"
-                >
-                    <RefreshCw className={loading ? "animate-spin w-4 h-4" : "w-4 h-4"} />
-                    Aktualisieren
-                </button>
+                <div className="flex items-center gap-4">
+                    {!supabase && (
+                        <div className="flex items-center gap-2 px-2 py-1 bg-red-500/20 text-red-200 border border-red-500/50 rounded-md text-[10px] font-bold" title="Die Supabase-Keys fehlen in den Umgebungsvariablen (Vercel). Fortschritt wird nicht gespeichert.">
+                            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                            OFFLINE (KEINE KEYS)
+                        </div>
+                    )}
+                    {supabase && !loading && (
+                        <div className="flex items-center gap-2 px-2 py-1 bg-green-500/20 text-green-300 border border-green-500/50 rounded-md text-[10px] font-bold">
+                            <span className="w-2 h-2 bg-green-500 rounded-full" />
+                            VERBUNDEN
+                        </div>
+                    )}
+                    <button
+                        onClick={fetchData}
+                        disabled={loading || !supabase}
+                        className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-md transition-all text-sm font-medium disabled:opacity-50"
+                    >
+                        <RefreshCw className={loading ? "animate-spin w-4 h-4" : "w-4 h-4"} />
+                        Aktualisieren
+                    </button>
+                </div>
             </header>
 
             <main className="flex-1 overflow-y-auto p-6">
