@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useGameStore } from '../store/useGameStore';
 import { SCENARIOS } from '../data/scenarios';
-import { CheckCircle, Terminal, Menu, X, Mail, Search, Code2, Settings, RotateCcw, Download, Share2 } from 'lucide-react';
+import { CheckCircle, Terminal, Menu, X, Mail, Search, Code2, Settings, RotateCcw } from 'lucide-react';
 import clsx from 'clsx';
 import { ScenarioBriefing } from './ScenarioBriefing';
 import { DiagnosticTool } from './DiagnosticTool';
@@ -18,14 +18,12 @@ export const Shell: React.FC = () => {
         currentScenarioId,
         phase,
         completedScenarios,
-        hasSeenTutorial,
         studentName,
         loginStudent,
         startScenario,
         setPhase,
         addMistake,
-        fullReset,
-        importProgress
+        fullReset
     } = useGameStore();
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -172,47 +170,21 @@ export const Shell: React.FC = () => {
                             Fortschritt
                         </div>
                         <div className="flex flex-col gap-1.5">
-                            <button
-                                onClick={() => {
-                                    if (confirm("Möchtest du wirklich deinen gesamten Fortschritt löschen?")) {
-                                        fullReset();
-                                        window.location.reload();
-                                    }
-                                }}
-                                className="flex items-center gap-2 text-left hover:text-red-400 transition-colors py-1 group"
-                                title="Alle erledigten Aufgaben zurücksetzen"
-                            >
-                                <RotateCcw className="w-3.5 h-3.5 group-hover:rotate-[-45deg] transition-transform" />
-                                Zurücksetzen
-                            </button>
-                            <button
-                                onClick={() => {
-                                    const data = JSON.stringify({ completedScenarios, hasSeenTutorial });
-                                    navigator.clipboard.writeText(data);
-                                    alert("Fortschritt kopiert! Du kannst diesen Code speichern oder deinem Lehrer schicken.");
-                                }}
-                                className="flex items-center gap-2 text-left hover:text-indigo-400 transition-colors py-1"
-                                title="Fortschritt als Code kopieren"
-                            >
-                                <Share2 className="w-3.5 h-3.5" />
-                                Exportieren
-                            </button>
-                            <button
-                                onClick={() => {
-                                    const code = prompt("Füge hier deinen Fortschritts-Code ein:");
-                                    if (code && importProgress(code)) {
-                                        alert("Erfolgreich importiert!");
-                                        window.location.reload();
-                                    } else if (code) {
-                                        alert("Ungültiger Code.");
-                                    }
-                                }}
-                                className="flex items-center gap-2 text-left hover:text-indigo-400 transition-colors py-1"
-                                title="Fortschritt aus Code laden"
-                            >
-                                <Download className="w-3.5 h-3.5" />
-                                Importieren
-                            </button>
+                            {studentName && (
+                                <button
+                                    onClick={() => {
+                                        if (confirm("Möchtest du wirklich deinen gesamten Fortschritt löschen? Dies betrifft auch die Cloud-Speicherung.")) {
+                                            fullReset();
+                                            window.location.reload();
+                                        }
+                                    }}
+                                    className="flex items-center gap-2 text-left hover:text-red-400 transition-colors py-1 group"
+                                    title="Alle erledigten Aufgaben zurücksetzen"
+                                >
+                                    <RotateCcw className="w-3.5 h-3.5 group-hover:rotate-[-45deg] transition-transform" />
+                                    Zurücksetzen
+                                </button>
+                            )}
                             <button
                                 onClick={() => {
                                     const teacherPin = import.meta.env.VITE_TEACHER_PIN || 'admin';
