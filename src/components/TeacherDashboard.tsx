@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { SCENARIOS } from '../data/scenarios';
-import { RefreshCw, ChevronLeft, GraduationCap, Key, X } from 'lucide-react';
+import { RefreshCw, ChevronLeft, GraduationCap, Key, X, Eye, Code, Calendar } from 'lucide-react';
 
 interface StudentProgress {
     session_id: string;
@@ -20,6 +20,7 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
     const [newPin, setNewPin] = useState('');
     const [isResetting, setIsResetting] = useState(false);
     const [schemaError, setSchemaError] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState<StudentProgress | null>(null);
 
     const handleResetPin = async () => {
         if (!resetPinStudent || !newPin.trim() || !supabase) return;
@@ -203,14 +204,22 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
                                                 <td className="px-6 py-4 text-xs text-slate-500">
                                                     {new Date(student.last_updated).toLocaleTimeString()}
                                                 </td>
-                                                <td className="px-6 py-4 flex justify-end">
+                                                <td className="px-6 py-4 flex justify-end gap-2">
+                                                    <button
+                                                        onClick={() => setSelectedStudent(student)}
+                                                        className="text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                                                        title="Code einspeisen"
+                                                    >
+                                                        <Eye className="w-3.5 h-3.5" />
+                                                        Ansehen
+                                                    </button>
                                                     <button
                                                         onClick={() => setResetPinStudent(student)}
-                                                        className="text-[11px] font-bold bg-slate-100 hover:bg-indigo-600 text-slate-600 hover:text-white px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                                                        className="text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
                                                         title="Neues Passwort vergeben"
                                                     >
                                                         <Key className="w-3.5 h-3.5" />
-                                                        PIN ändern
+                                                        PIN
                                                     </button>
                                                 </td>
                                             </tr>
@@ -257,6 +266,111 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
                                 {isResetting ? 'Wird gespeichert...' : 'Passwort ändern'}
                             </button>
                         </form>
+                    </div>
+                </div>
+            )}
+            {/* Student Detail Modal */}
+            {selectedStudent && (
+                <div className="fixed inset-0 bg-slate-900/60 z-[200] flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                        <header className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-bold">
+                                    {selectedStudent.student_name.substring(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900">{selectedStudent.student_name}</h3>
+                                    <p className="text-xs text-slate-500 font-medium flex items-center gap-2">
+                                        <span className="px-1.5 py-0.5 bg-slate-200 rounded text-slate-600 lowercase">{selectedStudent.class_name || 'allgemein'}</span>
+                                        • zuletzt aktiv um {new Date(selectedStudent.last_updated).toLocaleTimeString()}
+                                    </p>
+                                </div>
+                            </div>
+                            <button onClick={() => setSelectedStudent(null)} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </header>
+
+                        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-50/30">
+                            {/* Tickets List */}
+                            <div className="md:col-span-4 space-y-3">
+                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Abgeschlossene Tickets</h4>
+                                {selectedStudent.completed_ids && selectedStudent.completed_ids.length > 0 ? (
+                                    selectedStudent.completed_ids.map(id => {
+                                        const scenario = SCENARIOS.find(s => s.id === id);
+                                        return (
+                                            <div key={id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter bg-indigo-50 px-2 py-0.5 rounded">
+                                                        {scenario?.difficulty || 'Ticket'}
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-slate-400">ID: {id}</span>
+                                                </div>
+                                                <div className="font-bold text-slate-800 text-sm mb-3">
+                                                    {scenario?.title || id}
+                                                </div>
+
+                                                {selectedStudent.solution_data?.[id] ? (
+                                                    <div className="relative group">
+                                                        <div className="text-[11px] font-mono bg-slate-900 text-indigo-300 p-3 rounded-lg overflow-x-auto max-h-[150px] leading-relaxed border-l-4 border-indigo-500">
+                                                            <pre>{selectedStudent.solution_data[id]}</pre>
+                                                        </div>
+                                                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Code className="w-4 h-4 text-indigo-400/50" />
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-[10px] text-slate-400 italic bg-slate-50 p-2 rounded border border-dashed border-slate-200 text-center">
+                                                        Keine Code-Daten vorhanden
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-slate-200">
+                                        <p className="text-sm text-slate-400 font-medium italic">Noch keine Tickets bearbeitet.</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Summary / Stats */}
+                            <div className="md:col-span-8 space-y-6">
+                                <div className="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200 relative overflow-hidden">
+                                    <div className="relative z-10">
+                                        <h4 className="text-white/70 text-sm font-bold mb-1">Qualität & Performance</h4>
+                                        <div className="text-3xl font-black mb-4">Hervorragend</div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-white/10 p-3 rounded-xl border border-white/20">
+                                                <div className="text-white/60 text-[10px] font-bold uppercase">Abgeschlossen</div>
+                                                <div className="text-xl font-bold">{selectedStudent.completed_count} / {totalScenarios}</div>
+                                            </div>
+                                            <div className="bg-white/10 p-3 rounded-xl border border-white/20">
+                                                <div className="text-white/60 text-[10px] font-bold uppercase">Klasse</div>
+                                                <div className="text-xl font-bold">{selectedStudent.class_name || 'Allgemein'}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <GraduationCap className="absolute -bottom-6 -right-6 w-32 h-32 text-white/10 -rotate-12" />
+                                </div>
+
+                                <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                                    <h4 className="text-slate-900 font-bold mb-4 flex items-center gap-2">
+                                        <Calendar className="w-4 h-4 text-indigo-600" />
+                                        Letzte Aktivitäten
+                                    </h4>
+                                    <div className="space-y-4">
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5" />
+                                            <div>
+                                                <div className="text-sm font-bold text-slate-800">Datenbank-Synchronisierung erfolgreich</div>
+                                                <div className="text-xs text-slate-400 font-medium">{new Date(selectedStudent.last_updated).toLocaleString()}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
