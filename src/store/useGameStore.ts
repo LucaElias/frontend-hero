@@ -29,7 +29,7 @@ interface GameState {
     importProgress: (data: string) => boolean;
     loginStudent: (name: string, password: string, className: string) => Promise<{ success: boolean; message?: string }>;
     logoutStudent: () => void;
-    syncProgress: () => Promise<void>;
+    syncProgress: () => Promise<{ success: boolean; message?: string }>;
 }
 
 export const useGameStore = create<GameState>()(
@@ -196,23 +196,49 @@ export const useGameStore = create<GameState>()(
                         className: className,
                         sessionId: combinedId,
                         completedScenarios: [],
+                        solutions: {},
                         hasSeenTutorial: false,
-                        phase: 'briefing'
+                        phase: 'briefing',
+                        lastSyncError: null
                     });
-                    await get().syncProgress?.();
+
+                    const syncResult = await get().syncProgress();
+                    if (!syncResult.success) {
+                        const errMsg = syncResult.message || "";
+                        // Capture database unique constraint error
+                        const isTaken = errMsg.includes('unique_student_per_class') || errMsg.includes('23505');
+
+                        set({
+                            studentName: null,
+                            className: null,
+                            sessionId: null,
+                            solutions: {},
+                            completedScenarios: [],
+                            hasSeenTutorial: false,
+                            phase: 'briefing'
+                        });
+
+                        return {
+                            success: false,
+                            message: isTaken
+                                ? `Der Name "${name}" ist in der Klasse "${className}" bereits vergeben. Bitte wähle einen anderen Namen.`
+                                : `Fehler beim Erstellen des Profils: ${errMsg}`
+                        };
+                    }
+
                     return { success: true };
-                } catch (err) {
+                } catch (err: any) {
                     console.error("Login error", err);
                     set({
-                        studentName: name,
-                        className: className,
-                        sessionId: combinedId,
+                        studentName: null,
+                        className: null,
+                        sessionId: null,
+                        solutions: {},
                         completedScenarios: [],
                         hasSeenTutorial: false,
                         phase: 'briefing'
                     });
-                    await get().syncProgress?.();
-                    return { success: true };
+                    return { success: false, message: err.message || "Ein unerwarteter Fehler ist aufgetreten." };
                 }
             },
 
@@ -231,7 +257,7 @@ export const useGameStore = create<GameState>()(
 
             syncProgress: async () => {
                 const state = get();
-                if (!supabase || !state.studentName || !state.sessionId) return;
+                if (!supabase || !state.studentName || !state.sessionId) return { success: true };
 
                 try {
                     const { error } = await supabase.from('student_progress').upsert({
@@ -247,12 +273,16 @@ export const useGameStore = create<GameState>()(
                     if (error) {
                         console.error("Supabase Sync Error:", error.message, error.details);
                         set({ lastSyncError: error.message });
+                        return { success: false, message: error.message };
                     } else {
                         set({ lastSyncError: null });
+                        return { success: true };
                     }
                 } catch (err: any) {
                     console.error("Sync failed critically:", err);
-                    set({ lastSyncError: err.message || "Unbekannter Fehler beim Speichern" });
+                    const msg = err.message || "Unbekannter Fehler beim Speichern";
+                    set({ lastSyncError: msg });
+                    return { success: false, message: msg };
                 }
             }
         }),
