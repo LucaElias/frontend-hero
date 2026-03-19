@@ -45,7 +45,7 @@ export const SuccessView: React.FC = () => {
                     onClick={nextScenario}
                     className="group bg-white text-indigo-600 px-8 py-3 rounded-full font-bold text-lg hover:bg-gray-100 transition-all flex items-center gap-2 mx-auto"
                 >
-                    Nächstes Ticket <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    Nächste Aufgabe <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
             </div>
         </div>

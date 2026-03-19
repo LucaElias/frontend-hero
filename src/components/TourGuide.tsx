@@ -4,15 +4,17 @@ import type { CallBackProps, Step } from 'react-joyride';
 import { useGameStore } from '../store/useGameStore';
 
 export const TourGuide: React.FC = () => {
-    const { hasSeenTutorial, setHasSeenTutorial, currentScenarioId, setPhase } = useGameStore();
+    const { setHasSeenTutorial, currentScenarioId, setPhase } = useGameStore();
     const [run, setRun] = useState(false);
 
     useEffect(() => {
-        // Run tutorial only if it's the tutorial scenario and hasn't been seen
-        if (currentScenarioId === '0-tutorial' && !hasSeenTutorial) {
+        // Run tutorial if it's the tutorial scenario
+        if (currentScenarioId === '0-tutorial') {
             setRun(true);
+        } else {
+            setRun(false);
         }
-    }, [currentScenarioId, hasSeenTutorial]);
+    }, [currentScenarioId]);
 
     const steps: Step[] = [
         {
@@ -22,14 +24,14 @@ export const TourGuide: React.FC = () => {
             disableBeacon: true,
         },
         {
-            target: '.truncate', // Sidebar ticket list area
+            target: '#tour-tickets-list',
             content: 'Ganz links findest du deine "Tickets" (Aufgaben). Jedes Ticket repräsentiert eine Störungsmeldung von einem Kollegen oder Kunden. Du musst sie nacheinander abarbeiten.',
             placement: 'right',
         },
         {
-            target: '#tour-briefing',
+            target: '#tour-briefing-tab',
             content: 'Schritt 1: Posteingang. Hier liest du die Fehlerbeschreibung. Verstehe das Problem, bevor du handelst.',
-            placement: 'bottom',
+            placement: 'top',
         },
         {
             target: 'button[style*="background-color: rgb(0, 0, 0)"]', // Problemanalyse starten button
@@ -37,13 +39,13 @@ export const TourGuide: React.FC = () => {
             placement: 'top',
         },
         {
-            target: '#tour-diagnosis',
-            content: '2. ANALYSE: Bevor du codest, musst du verstehen, was falsch läuft. Wähle die richtige Antwort aus, um den Workspace freizuschalten.',
+            target: '#tour-diagnosis-tab',
+            content: '2. Analyse: Bevor du codest, musst du verstehen, was falsch läuft. Wähle die richtige Antwort aus, um den Workspace freizuschalten.',
             placement: 'bottom',
         },
         {
-            target: '#tour-workbench',
-            content: '3. WORKSPACE: Hier findet die eigentliche Arbeit statt. Korrigiere den CSS-Code und klicke oben rechts auf "EINGABE PRÜFEN".',
+            target: '#tour-workbench-tab',
+            content: '3. Workspace: Hier findet die eigentliche Arbeit statt. Korrigiere den CSS-Code und klicke oben rechts auf "EINGABE PRÜFEN".',
             placement: 'bottom',
         }
     ];
@@ -59,11 +61,11 @@ export const TourGuide: React.FC = () => {
 
         // Logic to switch tabs automatically during the tour
         if (action === 'next' || action === 'prev') {
-            if (index === 0) {
+            if (index < 4) {
                 setPhase('briefing');
-            } else if (index === 1) {
+            } else if (index === 4) {
                 setPhase('diagnosis');
-            } else if (index === 2) {
+            } else if (index === 5) {
                 setPhase('workbench');
             }
         }
@@ -76,7 +78,6 @@ export const TourGuide: React.FC = () => {
             hideCloseButton
             run={run}
             scrollToFirstStep
-            showProgress
             showSkipButton
             steps={steps}
             styles={{

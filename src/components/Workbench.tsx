@@ -52,13 +52,9 @@ export const Workbench: React.FC<Props> = ({ scenario }) => {
 
         // Fake validation delay for effect
         setTimeout(() => {
-            // Very basic validation: Check if required selectors are present and output changed
             const hasChanged = userCss.trim() !== scenario.solution.initialCss.trim();
-
-            // This is a naive check. In a real app we'd parse the CSS AST.
-            // For Scenario 1: check for background-color on .cta-button
-            // For Scenario 2: check for padding on .info-box
-            // For Scenario 3: check for display: flex on .gallery
+            const cleanCss = userCss.replace(/\/\*[\s\S]*?\*\//g, '').toLowerCase();
+            const noSpaceCss = cleanCss.replace(/\s+/g, '');
 
             let isCorrect = false;
             let hint = "";
@@ -71,15 +67,23 @@ export const Workbench: React.FC<Props> = ({ scenario }) => {
 
                 if (scenario.solution.targetCssProperties) {
                     for (const [selector, props] of Object.entries(scenario.solution.targetCssProperties)) {
-                        if (!userCss.includes(selector)) {
+                        const noSpaceSelector = selector.replace(/\s+/g, '').toLowerCase();
+                        if (!noSpaceCss.includes(noSpaceSelector)) {
                             isCorrect = false;
                             hint = `Fehlt da noch der Selektor "${selector}"?`;
                             break;
                         }
-                        for (const prop of Object.keys(props)) {
-                            if (!userCss.includes(prop) && !userCss.replace(/\s/g, '').includes(prop.replace(/\s/g, ''))) {
+                        for (const [prop, val] of Object.entries(props as Record<string, string>)) {
+                            const propLower = prop.toLowerCase();
+                            if (!cleanCss.includes(propLower)) {
                                 isCorrect = false;
                                 hint = `Überprüfe die Eigenschaft "${prop}" für ${selector}.`;
+                                break;
+                            }
+                            const propValCompact = `${prop}:${val}`.replace(/\s+/g, '').toLowerCase();
+                            if (!noSpaceCss.includes(propValCompact)) {
+                                isCorrect = false;
+                                hint = `Der Wert für "${prop}" sieht noch nicht exakt passend aus (Tipp: ${val}).`;
                                 break;
                             }
                         }
@@ -87,7 +91,8 @@ export const Workbench: React.FC<Props> = ({ scenario }) => {
                     }
                 } else if (scenario.solution.requiredSelectors && scenario.solution.requiredSelectors.length > 0) {
                     for (const selector of scenario.solution.requiredSelectors) {
-                        if (!userCss.includes(selector)) {
+                        const noSpaceSelector = selector.replace(/\s+/g, '').toLowerCase();
+                        if (!noSpaceCss.includes(noSpaceSelector)) {
                             isCorrect = false;
                             hint = `Fehlt da noch der Selektor "${selector}"?`;
                             break;
@@ -113,7 +118,7 @@ export const Workbench: React.FC<Props> = ({ scenario }) => {
             <div className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm z-10 shrink-0">
                 <div className="flex items-center gap-4">
                     <h2 className="font-bold text-lg text-slate-800 tracking-tight">{scenario.title}</h2>
-                    <div className="text-[10px] font-bold uppercase tracking-wider px-2 px-x py-1 bg-indigo-50 text-indigo-700 rounded-md border border-indigo-100">Workspace</div>
+                    <div className="text-[10px] font-bold px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md border border-indigo-100">Workspace</div>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -143,9 +148,11 @@ export const Workbench: React.FC<Props> = ({ scenario }) => {
                     <button
                         onClick={handleValidate}
                         disabled={isValidating}
+                        aria-busy={isValidating}
+                        aria-label={isValidating ? "Prüfung läuft" : "Eingabe prüfen"}
                         style={!isValidating ? { backgroundColor: '#15803d', color: '#ffffff' } : {}}
                         className={clsx(
-                            "flex items-center gap-2 px-6 py-2.5 rounded-md font-bold transition-all shadow-md active:translate-y-0.5",
+                            "flex items-center gap-2 px-6 py-2.5 rounded-md font-bold transition-all shadow-md active:translate-y-0.5 focus:ring-2 focus:ring-offset-2 focus:ring-green-600",
                             isValidating
                                 ? "bg-gray-500 text-white cursor-wait shadow-none"
                                 : "hover:opacity-90 hover:shadow-lg"
@@ -155,7 +162,7 @@ export const Workbench: React.FC<Props> = ({ scenario }) => {
                             'Prüfe...'
                         ) : (
                             <>
-                                <Play className="w-4 h-4 fill-current" /> EINGABE PRÜFEN
+                                <Play className="w-4 h-4 fill-current" aria-hidden="true" /> Eingabe prüfen
                             </>
                         )}
                     </button>
@@ -219,8 +226,12 @@ export const Workbench: React.FC<Props> = ({ scenario }) => {
                             />
 
                             {feedback && (
-                                <div className="absolute bottom-4 left-4 right-4 bg-red-50 border border-red-200 text-red-800 p-3 rounded shadow-lg animate-in fade-in slide-in-from-bottom-2 z-10">
-                                    <strong>Hinweis:</strong> {feedback}
+                                <div
+                                    role="status"
+                                    aria-live="polite"
+                                    className="absolute bottom-4 left-4 right-4 bg-red-50 border border-red-200 text-red-800 p-3 rounded shadow-lg animate-in fade-in slide-in-from-bottom-2 z-10"
+                                >
+                                    <strong className="font-bold">Hinweis:</strong> {feedback}
                                 </div>
                             )}
                         </div>

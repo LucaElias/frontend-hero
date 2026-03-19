@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import DOMPurify from 'dompurify';
 
 interface ShadowPreviewProps {
     html: string;
@@ -22,32 +23,33 @@ export const ShadowPreview: React.FC<ShadowPreviewProps> = ({ html, css }) => {
     useEffect(() => {
         const shd = shadowRootRef.current;
         if (shd) {
-            // Basic reset to make it well-behaved
-            shd.innerHTML = `
-        <style>
-          /* Basic Reset for the isolation */
-          :host { 
-            display: block; 
-            width: 100%; 
-            height: 100%; 
-            background: white;
-            font-family: system-ui, -apple-system, sans-serif;
-            color: #333;
-            overflow: hidden; /* Host shouldn't scroll, inner div should */
-            pointer-events: auto;
-          }
-          *, *::before, *::after {
-            box-sizing: border-box;
-          }
-          
-          /* User CSS */
-          ${css}
-        </style>
-        
-        <div style="padding: 24px; height: 100%; overflow: auto; position: relative; pointer-events: auto;">
-            ${html}
-        </div>
-      `;
+            // Clear existing content
+            shd.innerHTML = '';
+
+            // Create styling safely to prevent CSS breakout attacks
+            const styleElement = document.createElement('style');
+            styleElement.textContent = `
+              /* Basic Reset for the isolation */
+              :host { 
+                display: block; 
+                width: 100%; 
+                height: 100%; 
+                background: white;
+                font-family: system-ui, -apple-system, sans-serif;
+                color: #333;
+                overflow: hidden; 
+                pointer-events: auto;
+              }
+              /* User CSS */
+              ${css}
+            `;
+            shd.appendChild(styleElement);
+
+            // Create wrapper safely and sanitize HTML input
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = "padding: 24px; height: 100%; overflow: auto; position: relative; pointer-events: auto;";
+            wrapper.innerHTML = DOMPurify.sanitize(html);
+            shd.appendChild(wrapper);
         }
     }, [html, css]);
 

@@ -39,8 +39,16 @@ export const ScenarioBuilder: React.FC = () => {
     const handleExportLink = () => {
         const base64 = btoa(encodeURIComponent(JSON.stringify(formData)));
         const url = `${window.location.origin}${window.location.pathname}?ticket=${base64}`;
-        navigator.clipboard.writeText(url);
-        alert('Link in die Zwischenablage kopiert!');
+
+        navigator.clipboard.writeText(url).then(() => {
+            if (url.length > 2000) {
+                alert('Link in die Zwischenablage kopiert!\n\nAchtung: Der Link sehr lang (>2000 Zeichen) und könnte in manchen Chats/Programmen abgeschnitten werden. Nutze bei Problemen alternativ den "Als JSON laden" Button.');
+            } else {
+                alert('Link in die Zwischenablage kopiert!');
+            }
+        }).catch(() => {
+            alert('Fehler beim Kopieren des Links.');
+        });
     };
 
     return (
