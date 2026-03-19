@@ -245,8 +245,8 @@ export const Shell: React.FC = () => {
                                 )}
                             </div>
 
-                            <div className="flex-1 min-h-0 relative bg-white overflow-y-auto">
-                                <div key={phase} className="min-h-full w-full animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out">
+                            <div className="flex-1 min-h-0 relative overflow-y-auto">
+                                <div key={phase} className="min-h-full flex flex-col w-full animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out">
                                     {renderPhase(phase, currentScenario, setPhase, addMistake)}
                                 </div>
                             </div>

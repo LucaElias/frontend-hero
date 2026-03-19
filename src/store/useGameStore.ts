@@ -219,7 +219,7 @@ export const useGameStore = create<GameState>()(
                 if (!supabase || !state.studentName || !state.sessionId) return;
 
                 try {
-                    await supabase.from('student_progress').upsert({
+                    const { error } = await supabase.from('student_progress').upsert({
                         session_id: state.sessionId,
                         student_name: state.studentName,
                         class_name: state.className || 'allgemein',
@@ -227,8 +227,12 @@ export const useGameStore = create<GameState>()(
                         completed_ids: state.completedScenarios,
                         last_updated: new Date().toISOString()
                     }, { onConflict: 'session_id' });
+
+                    if (error) {
+                        console.error("Supabase Sync Error:", error.message, error.details);
+                    }
                 } catch (err) {
-                    console.error("Sync failed", err);
+                    console.error("Sync failed critically:", err);
                 }
             }
         }),
