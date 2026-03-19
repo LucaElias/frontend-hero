@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useGameStore } from '../store/useGameStore';
 import { SCENARIOS } from '../data/scenarios';
-import { CheckCircle, Terminal, Menu, X, Mail, Search, Code2, User } from 'lucide-react';
+import { CheckCircle, Terminal, Menu, X, Mail, Search, Code2, User, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
 import { ScenarioBriefing } from './ScenarioBriefing';
 import { DiagnosticTool } from './DiagnosticTool';
@@ -23,7 +23,8 @@ export const Shell: React.FC = () => {
         logoutStudent,
         startScenario,
         setPhase,
-        addMistake
+        addMistake,
+        lastSyncError
     } = useGameStore();
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -185,6 +186,23 @@ export const Shell: React.FC = () => {
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-h-0 relative pt-16 lg:pt-0">
+                {lastSyncError && (
+                    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[200] max-w-md w-full px-4 animate-in slide-in-from-top-4 duration-300">
+                        <div className="bg-red-600 text-white p-4 rounded-xl shadow-2xl flex items-start gap-3 border-2 border-red-500/50 backdrop-blur-md">
+                            <AlertCircle className="w-6 h-6 shrink-0 mt-0.5" />
+                            <div>
+                                <h4 className="font-bold text-sm">Synchronisierungs-Fehler</h4>
+                                <p className="text-xs opacity-90 mt-1 leading-relaxed">
+                                    Dein Fortschritt konnte nicht in der Cloud gespeichert werden: <br />
+                                    <code className="bg-black/20 px-1 rounded font-mono">{lastSyncError}</code>
+                                </p>
+                                <p className="text-[10px] mt-2 font-medium opacity-75">
+                                    Wahrscheinlich fehlt die Tabellenspalte "solution_data". Bitte den Lehrer informieren.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {/* Content Area */}
                 <div className="flex-1 flex flex-col min-h-0">
                     {!currentScenario ? (

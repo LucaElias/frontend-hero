@@ -15,6 +15,7 @@ interface GameState {
     className: string | null;
     sessionId: string | null;
     solutions: Record<string, string>;
+    lastSyncError: string | null;
 
     startScenario: (scenarioId: string) => void;
     setPhase: (phase: Phase) => void;
@@ -44,6 +45,7 @@ export const useGameStore = create<GameState>()(
             className: null,
             sessionId: null,
             solutions: {},
+            lastSyncError: null,
 
             startScenario: (scenarioId: string) => {
                 const state = get();
@@ -117,7 +119,8 @@ export const useGameStore = create<GameState>()(
                     studentName: null,
                     className: null,
                     sessionId: null,
-                    solutions: {}
+                    solutions: {},
+                    lastSyncError: null
                 });
             },
 
@@ -221,7 +224,8 @@ export const useGameStore = create<GameState>()(
                     solutions: {},
                     completedScenarios: [],
                     hasSeenTutorial: false,
-                    phase: 'briefing'
+                    phase: 'briefing',
+                    lastSyncError: null
                 });
             },
 
@@ -242,9 +246,13 @@ export const useGameStore = create<GameState>()(
 
                     if (error) {
                         console.error("Supabase Sync Error:", error.message, error.details);
+                        set({ lastSyncError: error.message });
+                    } else {
+                        set({ lastSyncError: null });
                     }
-                } catch (err) {
+                } catch (err: any) {
                     console.error("Sync failed critically:", err);
+                    set({ lastSyncError: err.message || "Unbekannter Fehler beim Speichern" });
                 }
             }
         }),

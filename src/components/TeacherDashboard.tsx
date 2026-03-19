@@ -9,6 +9,7 @@ interface StudentProgress {
     class_name: string;
     completed_count: number;
     completed_ids: string[];
+    solution_data?: any;
     last_updated: string;
 }
 
@@ -18,6 +19,7 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
     const [resetPinStudent, setResetPinStudent] = useState<StudentProgress | null>(null);
     const [newPin, setNewPin] = useState('');
     const [isResetting, setIsResetting] = useState(false);
+    const [schemaError, setSchemaError] = useState(false);
 
     const handleResetPin = async () => {
         if (!resetPinStudent || !newPin.trim() || !supabase) return;
@@ -48,12 +50,21 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
     const fetchData = async () => {
         if (!supabase) return;
         setLoading(true);
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('student_progress')
             .select('*')
             .order('last_updated', { ascending: false });
 
-        if (data) setStudents(data);
+        if (error) {
+            console.error("Fetch error:", error);
+            // Check if error is missing column
+            if (error.message.includes('solution_data')) {
+                setSchemaError(true);
+            }
+        } else if (data) {
+            setStudents(data);
+            setSchemaError(false);
+        }
         setLoading(false);
     };
 
@@ -91,10 +102,15 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
                             OFFLINE (KEINE KEYS)
                         </div>
                     )}
-                    {supabase && !loading && (
+                    {supabase && !loading && !schemaError && (
                         <div className="flex items-center gap-2 px-2 py-1 bg-green-500/20 text-green-300 border border-green-500/50 rounded-md text-[10px] font-bold">
                             <span className="w-2 h-2 bg-green-500 rounded-full" />
                             VERBUNDEN
+                        </div>
+                    )}
+                    {schemaError && (
+                        <div className="flex items-center gap-2 px-2 py-1 bg-amber-500/20 text-amber-200 border border-amber-500/50 rounded-md text-[10px] font-bold animate-pulse" title="Die Spalte 'solution_data' fehlt in Supabase. Bitte SQL-Update ausführen!">
+                            SCHEMA-FEHLER
                         </div>
                     )}
                     <button
