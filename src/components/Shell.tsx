@@ -35,6 +35,7 @@ export const Shell: React.FC = () => {
     const [showTeacherPinModal, setShowTeacherPinModal] = useState(false);
     const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
     const [teacherPinInput, setTeacherPinInput] = useState('');
+    const [loginError, setLoginError] = useState<string | null>(null);
     const currentScenario = SCENARIOS.find(s => s.id === currentScenarioId);
 
     // Initial State: No scenario selected? Or auto-select first?
@@ -289,11 +290,12 @@ export const Shell: React.FC = () => {
                                 e.preventDefault();
                                 if (tempName.trim() && tempPassword.trim() && tempClass.trim()) {
                                     setIsLoggingIn(true);
+                                    setLoginError(null);
                                     const result = await loginStudent(tempName.trim(), tempPassword.trim(), tempClass.trim());
 
                                     if (!result.success) {
                                         setIsLoggingIn(false);
-                                        alert(result.message);
+                                        setLoginError(result.message || "Anmeldung fehlgeschlagen.");
                                         return;
                                     }
 
@@ -308,17 +310,16 @@ export const Shell: React.FC = () => {
                                     autoFocus
                                     type="text"
                                     value={tempClass}
-                                    onChange={(e) => setTempClass(e.target.value)}
+                                    onChange={(e) => { setTempClass(e.target.value); setLoginError(null); }}
                                     placeholder="Klasse / Kurs (z.B. 10a)"
                                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-indigo-500 focus:outline-none transition-colors mb-3 text-lg"
                                     required
                                     disabled={isLoggingIn}
                                 />
                                 <input
-                                    autoFocus
                                     type="text"
                                     value={tempName}
-                                    onChange={(e) => setTempName(e.target.value)}
+                                    onChange={(e) => { setTempName(e.target.value); setLoginError(null); }}
                                     placeholder="Dein Name..."
                                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-indigo-500 focus:outline-none transition-colors mb-3 text-lg"
                                     required
@@ -327,12 +328,19 @@ export const Shell: React.FC = () => {
                                 <input
                                     type="password"
                                     value={tempPassword}
-                                    onChange={(e) => setTempPassword(e.target.value)}
+                                    onChange={(e) => { setTempPassword(e.target.value); setLoginError(null); }}
                                     placeholder="Passwort / PIN (z.B. 1234)"
                                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-indigo-500 focus:outline-none transition-colors mb-4 text-lg"
                                     required
                                     disabled={isLoggingIn}
                                 />
+
+                                {loginError && (
+                                    <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 text-sm font-bold rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
+                                        <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                                        {loginError}
+                                    </div>
+                                )}
                                 <button
                                     type="submit"
                                     disabled={isLoggingIn}
