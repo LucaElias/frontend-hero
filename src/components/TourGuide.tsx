@@ -34,7 +34,7 @@ export const TourGuide: React.FC = () => {
             placement: 'top',
         },
         {
-            target: 'button[style*="background-color: rgb(0, 0, 0)"]', // Problemanalyse starten button
+            target: '#tour-briefing-start-button',
             content: 'Klicke am Ende der Mail immer auf "Problemanalyse starten", um zum nächsten Schritt zu gelangen.',
             placement: 'top',
         },

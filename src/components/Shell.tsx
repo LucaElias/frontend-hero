@@ -183,9 +183,9 @@ export const Shell: React.FC = () => {
             }
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col overflow-hidden relative pt-16 lg:pt-0">
+            <div className="flex-1 flex flex-col min-h-0 relative pt-16 lg:pt-0">
                 {/* Content Area */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                <div className="flex-1 flex flex-col min-h-0">
                     {!currentScenario ? (
                         <div className="flex items-center justify-center h-full text-gray-400">
                             Lade Szenarien...

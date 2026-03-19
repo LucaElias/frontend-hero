@@ -57,6 +57,7 @@ export const ScenarioBriefing: React.FC<Props> = ({ scenario, onStart }) => {
                     </div>
 
                     <button
+                        id="tour-briefing-start-button"
                         onClick={onStart}
                         style={{ backgroundColor: '#000000', color: '#ffffff' }}
                         className="w-full max-w-lg mx-auto font-bold text-lg py-4 px-6 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] mt-8 mb-2 border-b-2 border-gray-900"
