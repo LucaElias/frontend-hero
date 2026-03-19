@@ -31,6 +31,7 @@ export const Shell: React.FC = () => {
     const [tempPassword, setTempPassword] = useState('');
     const [isLoggingIn, setIsLoggingIn] = useState(false);
     const [showTeacherPinModal, setShowTeacherPinModal] = useState(false);
+    const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
     const [teacherPinInput, setTeacherPinInput] = useState('');
     const currentScenario = SCENARIOS.find(s => s.id === currentScenarioId);
 
@@ -231,9 +232,7 @@ export const Shell: React.FC = () => {
                                         </button>
                                         <button
                                             onClick={() => {
-                                                if (confirm("Möchtest du dich wirklich abmelden? Dein Fortschritt bleibt in der Cloud gespeichert.")) {
-                                                    logoutStudent();
-                                                }
+                                                setShowLogoutConfirmModal(true);
                                             }}
                                             className="flex items-center gap-1.5 text-gray-500 hover:text-red-500 transition-colors"
                                             title="Vom aktuellen Profil abmelden"
@@ -353,6 +352,40 @@ export const Shell: React.FC = () => {
                                     Entsperren
                                 </button>
                             </form>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Logout Confirmation Modal */}
+            {
+                showLogoutConfirmModal && (
+                    <div className="fixed inset-0 bg-gray-900/90 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-8 animate-in zoom-in-95 duration-200">
+                            <div className="flex justify-center mb-6">
+                                <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center text-red-600">
+                                    <X className="w-10 h-10" />
+                                </div>
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">Abmelden?</h3>
+                            <p className="text-gray-600 text-center mb-8">Möchtest du dich wirklich abmelden? Dein Fortschritt wird sicher in der Cloud gespeichert und du kannst ihn jederzeit fortsetzen.</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => setShowLogoutConfirmModal(false)}
+                                    className="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all"
+                                >
+                                    Abbrechen
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        logoutStudent();
+                                        setShowLogoutConfirmModal(false);
+                                    }}
+                                    className="px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg transition-all"
+                                >
+                                    Ja, abmelden
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )
