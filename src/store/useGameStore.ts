@@ -21,10 +21,10 @@ interface GameState {
     addMistake: () => void;
     resetMistakes: () => void;
     nextScenario: () => void;
-    setHasSeenTutorial: (val: boolean) => void;
+    setHasSeenTutorial: (value: boolean) => void;
     fullReset: () => void;
     importProgress: (data: string) => boolean;
-    setStudentName: (name: string) => void;
+    loginStudent: (name: string, password: string) => Promise<void>;
     syncProgress: () => Promise<void>;
 }
 
@@ -117,9 +117,41 @@ export const useGameStore = create<GameState>()(
                 }
             },
 
-            setStudentName: (name: string) => {
-                const sessionId = Math.random().toString(36).substring(7);
-                set({ studentName: name, sessionId });
+            loginStudent: async (name: string, password: string) => {
+                const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                const cleanPass = password.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                const combinedId = `${cleanName}-${cleanPass}`;
+
+                try {
+                    if (supabase) {
+                        const { data, error } = await supabase.from('student_progress').select('*').eq('session_id', combinedId).single();
+                        if (data && !error) {
+                            set({
+                                studentName: name,
+                                sessionId: combinedId,
+                                completedScenarios: data.completed_ids || [],
+                                hasSeenTutorial: (data.completed_ids || []).includes('0-tutorial')
+                            });
+                            return;
+                        }
+                    }
+
+                    set({
+                        studentName: name,
+                        sessionId: combinedId,
+                        completedScenarios: [],
+                        hasSeenTutorial: false
+                    });
+                    get().syncProgress?.();
+                } catch {
+                    set({
+                        studentName: name,
+                        sessionId: combinedId,
+                        completedScenarios: [],
+                        hasSeenTutorial: false
+                    });
+                    get().syncProgress?.();
+                }
             },
 
             syncProgress: async () => {

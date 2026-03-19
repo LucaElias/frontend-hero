@@ -20,7 +20,7 @@ export const Shell: React.FC = () => {
         completedScenarios,
         hasSeenTutorial,
         studentName,
-        setStudentName,
+        loginStudent,
         startScenario,
         setPhase,
         addMistake,
@@ -30,15 +30,18 @@ export const Shell: React.FC = () => {
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [tempName, setTempName] = useState('');
+    const [tempPassword, setTempPassword] = useState('');
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
     const currentScenario = SCENARIOS.find(s => s.id === currentScenarioId);
 
     // Initial State: No scenario selected? Or auto-select first?
     // Let's auto-select first if none.
     React.useEffect(() => {
-        if (!currentScenarioId && SCENARIOS.length > 0) {
-            startScenario(SCENARIOS[0].id);
+        if (!currentScenarioId && SCENARIOS.length > 0 && studentName) {
+            const nextScenario = SCENARIOS.find(s => !completedScenarios.includes(s.id)) || SCENARIOS[0];
+            startScenario(nextScenario.id);
         }
-    }, [currentScenarioId, startScenario]);
+    }, [currentScenarioId, studentName, completedScenarios, startScenario]);
 
     return (
         <div className="flex h-screen bg-gray-100 text-gray-900 font-sans overflow-hidden">
@@ -289,11 +292,19 @@ export const Shell: React.FC = () => {
                             </div>
                         </div>
                         <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Willkommen bei Frontend Hero!</h2>
-                        <p className="text-gray-600 text-center mb-8">Gib deinen Namen ein, um deinen Fortschritt in der Cloud zu speichern.</p>
+                        <p className="text-gray-600 text-center mb-8">Gib deinen Namen und ein Passwort ein, um deinen Fortschritt in der Cloud zu speichern oder fortzusetzen.</p>
 
-                        <form onSubmit={(e) => {
+                        <form onSubmit={async (e) => {
                             e.preventDefault();
-                            if (tempName.trim()) setStudentName(tempName.trim());
+                            if (tempName.trim() && tempPassword.trim()) {
+                                setIsLoggingIn(true);
+                                await loginStudent(tempName.trim(), tempPassword.trim());
+                                setIsLoggingIn(false);
+
+                                const store = useGameStore.getState();
+                                const nextScenario = SCENARIOS.find(s => !store.completedScenarios.includes(s.id)) || SCENARIOS[0];
+                                store.startScenario(nextScenario.id);
+                            }
                         }}>
                             <input
                                 autoFocus
@@ -301,14 +312,25 @@ export const Shell: React.FC = () => {
                                 value={tempName}
                                 onChange={(e) => setTempName(e.target.value)}
                                 placeholder="Dein Name..."
+                                className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-indigo-500 focus:outline-none transition-colors mb-3 text-lg"
+                                required
+                                disabled={isLoggingIn}
+                            />
+                            <input
+                                type="password"
+                                value={tempPassword}
+                                onChange={(e) => setTempPassword(e.target.value)}
+                                placeholder="Passwort / PIN (z.B. 1234)"
                                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-indigo-500 focus:outline-none transition-colors mb-4 text-lg"
                                 required
+                                disabled={isLoggingIn}
                             />
                             <button
                                 type="submit"
-                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-[0.98]"
+                                disabled={isLoggingIn}
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] disabled:opacity-75 disabled:active:scale-100"
                             >
-                                Jetzt starten
+                                {isLoggingIn ? 'Lädt...' : 'Jetzt starten / Login'}
                             </button>
                         </form>
                         <p className="text-center text-xs text-gray-400 mt-6">

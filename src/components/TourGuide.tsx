@@ -4,17 +4,17 @@ import type { CallBackProps, Step } from 'react-joyride';
 import { useGameStore } from '../store/useGameStore';
 
 export const TourGuide: React.FC = () => {
-    const { setHasSeenTutorial, currentScenarioId, setPhase } = useGameStore();
+    const { setHasSeenTutorial, currentScenarioId, setPhase, studentName, hasSeenTutorial } = useGameStore();
     const [run, setRun] = useState(false);
 
     useEffect(() => {
-        // Run tutorial if it's the tutorial scenario
-        if (currentScenarioId === '0-tutorial') {
+        // Run tutorial if it's the tutorial scenario, the student is logged in, and hasn't seen it
+        if (currentScenarioId === '0-tutorial' && studentName && !hasSeenTutorial) {
             setRun(true);
         } else {
             setRun(false);
         }
-    }, [currentScenarioId]);
+    }, [currentScenarioId, studentName, hasSeenTutorial]);
 
     const steps: Step[] = [
         {
