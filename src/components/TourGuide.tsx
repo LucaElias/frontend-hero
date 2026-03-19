@@ -61,7 +61,7 @@ export const TourGuide: React.FC = () => {
         }
 
         // Logic to switch tabs automatically during the tour
-        if (action === 'next' || action === 'prev') {
+        if (!finishedStatuses.includes(status) && (action === 'next' || action === 'prev')) {
             if (index < 4) {
                 setPhase('briefing');
             } else if (index === 4) {
