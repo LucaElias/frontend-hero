@@ -14,6 +14,7 @@ interface GameState {
     studentName: string | null;
     className: string | null;
     sessionId: string | null;
+    solutions: Record<string, string>;
 
     startScenario: (scenarioId: string) => void;
     setPhase: (phase: Phase) => void;
@@ -42,15 +43,20 @@ export const useGameStore = create<GameState>()(
             studentName: null,
             className: null,
             sessionId: null,
+            solutions: {},
 
             startScenario: (scenarioId: string) => {
+                const state = get();
                 const scenario = SCENARIOS.find(s => s.id === scenarioId);
                 if (!scenario) return;
+
+                // Load saved solution if exists, otherwise initial CSS
+                const savedCss = state.solutions[scenarioId];
 
                 set({
                     currentScenarioId: scenarioId,
                     phase: 'briefing',
-                    userCss: scenario.solution.initialCss,
+                    userCss: savedCss || scenario.solution.initialCss,
                     mistakes: 0
                 });
             },
@@ -60,15 +66,17 @@ export const useGameStore = create<GameState>()(
             updateUserCss: (css: string) => set({ userCss: css }),
 
             completeScenario: (scenarioId: string) => {
-                const { completedScenarios } = get();
-                if (!completedScenarios.includes(scenarioId)) {
-                    set({
-                        completedScenarios: [...completedScenarios, scenarioId],
-                        phase: 'completed'
-                    });
-                    // Trigger sync
-                    get().syncProgress?.();
-                }
+                const { completedScenarios, solutions, userCss } = get();
+                const isNew = !completedScenarios.includes(scenarioId);
+
+                set({
+                    completedScenarios: isNew ? [...completedScenarios, scenarioId] : completedScenarios,
+                    solutions: { ...solutions, [scenarioId]: userCss },
+                    phase: 'completed'
+                });
+
+                // Trigger sync
+                get().syncProgress?.();
             },
 
             addMistake: () => set(state => ({ mistakes: state.mistakes + 1 })),
@@ -108,7 +116,8 @@ export const useGameStore = create<GameState>()(
                     hasSeenTutorial: false,
                     studentName: null,
                     className: null,
-                    sessionId: null
+                    sessionId: null,
+                    solutions: {}
                 });
             },
 
@@ -153,6 +162,7 @@ export const useGameStore = create<GameState>()(
                                 className: className,
                                 sessionId: combinedId,
                                 completedScenarios: existingSession.completed_ids || [],
+                                solutions: existingSession.solution_data || {},
                                 hasSeenTutorial: (existingSession.completed_ids || []).includes('0-tutorial'),
                                 phase: 'briefing'
                             });
@@ -208,6 +218,7 @@ export const useGameStore = create<GameState>()(
                     studentName: null,
                     className: null,
                     sessionId: null,
+                    solutions: {},
                     completedScenarios: [],
                     hasSeenTutorial: false,
                     phase: 'briefing'
@@ -225,6 +236,7 @@ export const useGameStore = create<GameState>()(
                         class_name: state.className || 'allgemein',
                         completed_count: state.completedScenarios.length,
                         completed_ids: state.completedScenarios,
+                        solution_data: state.solutions,
                         last_updated: new Date().toISOString()
                     }, { onConflict: 'session_id' });
 
