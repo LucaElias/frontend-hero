@@ -28,6 +28,7 @@ export const Shell: React.FC = () => {
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [tempName, setTempName] = useState('');
+    const [tempClass, setTempClass] = useState('');
     const [tempPassword, setTempPassword] = useState('');
     const [isLoggingIn, setIsLoggingIn] = useState(false);
     const [showTeacherPinModal, setShowTeacherPinModal] = useState(false);
@@ -268,9 +269,16 @@ export const Shell: React.FC = () => {
 
                             <form onSubmit={async (e) => {
                                 e.preventDefault();
-                                if (tempName.trim() && tempPassword.trim()) {
+                                if (tempName.trim() && tempPassword.trim() && tempClass.trim()) {
                                     setIsLoggingIn(true);
-                                    await loginStudent(tempName.trim(), tempPassword.trim());
+                                    const result = await loginStudent(tempName.trim(), tempPassword.trim(), tempClass.trim());
+
+                                    if (!result.success) {
+                                        setIsLoggingIn(false);
+                                        alert(result.message);
+                                        return;
+                                    }
+
                                     setIsLoggingIn(false);
 
                                     const store = useGameStore.getState();
@@ -278,6 +286,16 @@ export const Shell: React.FC = () => {
                                     store.startScenario(nextScenario.id);
                                 }
                             }}>
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    value={tempClass}
+                                    onChange={(e) => setTempClass(e.target.value)}
+                                    placeholder="Klasse / Kurs (z.B. 10a)"
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-indigo-500 focus:outline-none transition-colors mb-3 text-lg"
+                                    required
+                                    disabled={isLoggingIn}
+                                />
                                 <input
                                     autoFocus
                                     type="text"

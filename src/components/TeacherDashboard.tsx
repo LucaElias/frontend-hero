@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { SCENARIOS } from '../data/scenarios';
-import { RefreshCw, ChevronLeft, GraduationCap, Clock, Key, X } from 'lucide-react';
+import { RefreshCw, ChevronLeft, GraduationCap, Key, X } from 'lucide-react';
 
 interface StudentProgress {
     session_id: string;
     student_name: string;
+    class_name: string;
     completed_count: number;
     completed_ids: string[];
     last_updated: string;
@@ -24,7 +25,8 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
 
         const cleanName = resetPinStudent.student_name.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
         const cleanPass = newPin.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-        const newSessionId = `${cleanName}-${cleanPass}`;
+        const cleanClass = (resetPinStudent.class_name || 'allgemein').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        const newSessionId = `${cleanClass}-${cleanName}-${cleanPass}`;
 
         const { error } = await supabase
             .from('student_progress')
@@ -55,11 +57,18 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
         setLoading(false);
     };
 
+    const [selectedClass, setSelectedClass] = useState<string>('Alle Klassen');
+
     useEffect(() => {
         fetchData();
         const interval = setInterval(fetchData, 10000); // Auto-refresh every 10s
         return () => clearInterval(interval);
     }, []);
+
+    const classes = ['Alle Klassen', ...Array.from(new Set(students.map(s => s.class_name || 'allgemein')))];
+    const filteredStudents = selectedClass === 'Alle Klassen'
+        ? students
+        : students.filter(s => (s.class_name || 'allgemein') === selectedClass);
 
     const totalScenarios = SCENARIOS.length;
 
@@ -90,7 +99,7 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                             <div className="text-slate-500 text-sm font-medium mb-1">Schüler Gesamt</div>
-                            <div className="text-3xl font-black text-slate-900">{students.length}</div>
+                            <div className="text-3xl font-black text-slate-900">{students.length} <span className="text-sm font-medium text-slate-400">({filteredStudents.length} gefiltert)</span></div>
                         </div>
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                             <div className="text-slate-500 text-sm font-medium mb-1">Durchschnittlicher Fortschritt</div>
@@ -101,8 +110,14 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
                             </div>
                         </div>
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                            <div className="text-slate-500 text-sm font-medium mb-1">Aktivität</div>
-                            <div className="text-sm text-green-600 font-bold">Live Updates aktiviert</div>
+                            <div className="text-slate-500 text-sm font-medium mb-1">Klasse filtern</div>
+                            <select
+                                value={selectedClass}
+                                onChange={(e) => setSelectedClass(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                                {classes.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
                         </div>
                     </div>
 
@@ -110,28 +125,33 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-200">
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Klasse</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Schüler</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Fortschritt</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Zuletzt Aktiv</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Aktionen</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {students.length === 0 ? (
+                                {filteredStudents.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
-                                            Noch keine Schülerdaten vorhanden.
+                                            Keine Schüler in dieser Auswahl.
                                         </td>
                                     </tr>
                                 ) : (
-                                    students.map((student) => {
+                                    filteredStudents.map((student) => {
                                         const progressPercent = (student.completed_count / totalScenarios) * 100;
                                         return (
                                             <tr key={student.session_id} className="hover:bg-slate-50/50 transition-colors">
                                                 <td className="px-6 py-4">
+                                                    <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-[11px] font-bold">
+                                                        {student.class_name || 'allgemein'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-bold text-xs">
+                                                        <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-bold text-xs shadow-sm">
                                                             {student.student_name.substring(0, 2).toUpperCase()}
                                                         </div>
                                                         <span className="font-bold text-slate-700">{student.student_name}</span>
@@ -145,32 +165,18 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
                                                                 style={{ width: `${progressPercent}%` }}
                                                             />
                                                         </div>
-                                                        <span className="text-xs font-bold text-slate-500 whitespace-nowrap">
+                                                        <span className="text-[10px] font-bold text-slate-500 whitespace-nowrap">
                                                             {student.completed_count} / {totalScenarios}
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4">
-                                                    {progressPercent === 100 ? (
-                                                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-black uppercase tracking-wider">
-                                                            Fertig
-                                                        </span>
-                                                    ) : (
-                                                        <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded text-[10px] font-black uppercase tracking-wider">
-                                                            In Arbeit
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-slate-500">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <Clock className="w-3 h-3" />
-                                                        {new Date(student.last_updated).toLocaleTimeString()}
-                                                    </div>
+                                                <td className="px-6 py-4 text-xs text-slate-500">
+                                                    {new Date(student.last_updated).toLocaleTimeString()}
                                                 </td>
                                                 <td className="px-6 py-4 flex justify-end">
                                                     <button
                                                         onClick={() => setResetPinStudent(student)}
-                                                        className="text-xs font-bold bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5"
+                                                        className="text-[11px] font-bold bg-slate-100 hover:bg-indigo-600 text-slate-600 hover:text-white px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
                                                         title="Neues Passwort vergeben"
                                                     >
                                                         <Key className="w-3.5 h-3.5" />
