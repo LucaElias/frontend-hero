@@ -85,6 +85,7 @@ export const useGameStore = create<GameState>()(
 
             setHasSeenTutorial: (val: boolean) => {
                 set({ hasSeenTutorial: val });
+                get().syncProgress?.();
             },
 
             fullReset: () => {
