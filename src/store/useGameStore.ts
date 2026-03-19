@@ -84,7 +84,15 @@ export const useGameStore = create<GameState>()(
             },
 
             setHasSeenTutorial: (val: boolean) => {
-                set({ hasSeenTutorial: val });
+                const { completedScenarios } = get();
+                const newCompleted = val
+                    ? (completedScenarios.includes('0-tutorial') ? completedScenarios : [...completedScenarios, '0-tutorial'])
+                    : completedScenarios.filter(id => id !== '0-tutorial');
+
+                set({
+                    hasSeenTutorial: val,
+                    completedScenarios: newCompleted
+                });
                 get().syncProgress?.();
             },
 

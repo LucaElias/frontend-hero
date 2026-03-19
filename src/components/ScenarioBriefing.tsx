@@ -12,7 +12,7 @@ export const ScenarioBriefing: React.FC<Props> = ({ scenario, onStart }) => {
     const { briefing } = scenario;
 
     return (
-        <div className="w-full h-full bg-white flex flex-col p-4 lg:p-8">
+        <div className="w-full bg-white flex flex-col p-4 lg:p-8">
             <div className="w-full bg-white shadow-sm rounded-xl border border-gray-200 flex flex-col pb-12 mb-8">
                 <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-gray-600">
