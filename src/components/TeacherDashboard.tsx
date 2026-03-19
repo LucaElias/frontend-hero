@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { SCENARIOS } from '../data/scenarios';
-import { RefreshCw, ChevronLeft, GraduationCap, Clock } from 'lucide-react';
+import { RefreshCw, ChevronLeft, GraduationCap, Clock, Key, X } from 'lucide-react';
 
 interface StudentProgress {
     session_id: string;
@@ -14,6 +14,34 @@ interface StudentProgress {
 export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [students, setStudents] = useState<StudentProgress[]>([]);
     const [loading, setLoading] = useState(true);
+    const [resetPinStudent, setResetPinStudent] = useState<StudentProgress | null>(null);
+    const [newPin, setNewPin] = useState('');
+    const [isResetting, setIsResetting] = useState(false);
+
+    const handleResetPin = async () => {
+        if (!resetPinStudent || !newPin.trim() || !supabase) return;
+        setIsResetting(true);
+
+        const cleanName = resetPinStudent.student_name.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanPass = newPin.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        const newSessionId = `${cleanName}-${cleanPass}`;
+
+        const { error } = await supabase
+            .from('student_progress')
+            .update({ session_id: newSessionId })
+            .eq('session_id', resetPinStudent.session_id);
+
+        if (error) {
+            alert("Fehler beim Ändern des Passworts: " + error.message);
+        } else {
+            alert("Passwort erfolgreich geändert!");
+            setResetPinStudent(null);
+            setNewPin('');
+            fetchData();
+        }
+
+        setIsResetting(false);
+    };
 
     const fetchData = async () => {
         if (!supabase) return;
@@ -86,12 +114,13 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Fortschritt</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Zuletzt Aktiv</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Aktionen</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {students.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
+                                        <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
                                             Noch keine Schülerdaten vorhanden.
                                         </td>
                                     </tr>
@@ -138,6 +167,16 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
                                                         {new Date(student.last_updated).toLocaleTimeString()}
                                                     </div>
                                                 </td>
+                                                <td className="px-6 py-4 flex justify-end">
+                                                    <button
+                                                        onClick={() => setResetPinStudent(student)}
+                                                        className="text-xs font-bold bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5"
+                                                        title="Neues Passwort vergeben"
+                                                    >
+                                                        <Key className="w-3.5 h-3.5" />
+                                                        PIN ändern
+                                                    </button>
+                                                </td>
                                             </tr>
                                         );
                                     })
@@ -147,6 +186,44 @@ export const TeacherDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
                     </div>
                 </div>
             </main>
+
+            {/* Password Reset Modal */}
+            {resetPinStudent && (
+                <div className="fixed inset-0 bg-slate-900/60 z-[200] flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <Key className="w-5 h-5 text-indigo-600" />
+                                Neues Passwort
+                            </h3>
+                            <button onClick={() => { setResetPinStudent(null); setNewPin(''); }} className="text-gray-400 hover:text-gray-600">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-4">
+                            Vergib ein neues Passwort (PIN) für <strong>{resetPinStudent.student_name}</strong>.
+                        </p>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            handleResetPin();
+                        }}>
+                            <input
+                                autoFocus
+                                type="text"
+                                value={newPin}
+                                onChange={e => setNewPin(e.target.value)}
+                                placeholder="Neue PIN (z.B. 1234)..."
+                                className="w-full px-4 py-2 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:outline-none transition-colors mb-4"
+                                required
+                                disabled={isResetting}
+                            />
+                            <button type="submit" disabled={isResetting} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold py-3 rounded-xl transition-all">
+                                {isResetting ? 'Wird gespeichert...' : 'Passwort ändern'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

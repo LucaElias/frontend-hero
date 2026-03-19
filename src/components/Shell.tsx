@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useGameStore } from '../store/useGameStore';
 import { SCENARIOS } from '../data/scenarios';
-import { CheckCircle, Terminal, Menu, X, Mail, Search, Code2, Settings, RotateCcw } from 'lucide-react';
+import { CheckCircle, Terminal, Menu, X, Mail, Search, Code2, User } from 'lucide-react';
 import clsx from 'clsx';
 import { ScenarioBriefing } from './ScenarioBriefing';
 import { DiagnosticTool } from './DiagnosticTool';
@@ -23,8 +23,7 @@ export const Shell: React.FC = () => {
         logoutStudent,
         startScenario,
         setPhase,
-        addMistake,
-        fullReset
+        addMistake
     } = useGameStore();
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -167,54 +166,7 @@ export const Shell: React.FC = () => {
                             />
                         </label>
                     </div>
-                    <div className="pt-2 border-t border-gray-800/50 flex flex-col gap-2">
-                        <div className="text-[10px] uppercase tracking-widest font-bold text-gray-600 mb-1 flex items-center gap-1">
-                            <Settings className="w-3 h-3" />
-                            Fortschritt
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                            {studentName && (
-                                <>
-                                    <button
-                                        onClick={() => {
-                                            if (confirm("Möchtest du wirklich deinen gesamten Fortschritt löschen? Dies betrifft auch die Cloud-Speicherung.")) {
-                                                fullReset();
-                                                window.location.reload();
-                                            }
-                                        }}
-                                        className="flex items-center gap-2 text-left hover:text-red-400 transition-colors py-1 group"
-                                        title="Alle erledigten Aufgaben zurücksetzen"
-                                    >
-                                        <RotateCcw className="w-3.5 h-3.5 group-hover:rotate-[-45deg] transition-transform" />
-                                        Zurücksetzen
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            if (confirm("Möchtest du dich wirklich abmelden? Dein Fortschritt bleibt in der Cloud gespeichert.")) {
-                                                logoutStudent();
-                                            }
-                                        }}
-                                        className="flex items-center gap-2 text-left hover:text-red-400 transition-colors py-1 group"
-                                        title="Vom aktuellen Profil abmelden"
-                                    >
-                                        <X className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-                                        Abmelden
-                                    </button>
-                                </>
-                            )}
-                            <button
-                                onClick={() => {
-                                    setShowTeacherPinModal(true);
-                                    setIsSidebarOpen(false);
-                                }}
-                                className="flex items-center gap-2 text-left hover:text-indigo-400 transition-colors py-1"
-                                title="Lehrer-Dashboard öffnen"
-                            >
-                                <Shield className="w-3.5 h-3.5" />
-                                Lehrer-Ansicht
-                            </button>
-                        </div>
-                    </div>
+
                     <div className="text-center opacity-50 mt-2">Simulierte Umgebung v1.0</div>
                 </div>
             </div>
@@ -240,27 +192,61 @@ export const Shell: React.FC = () => {
                     ) : (
                         <div className="h-full w-full bg-white flex flex-col">
                             {/* Navigation Tabs */}
-                            <div className="flex items-center border-b border-gray-200 bg-gray-50 px-6 pt-4 gap-2 shrink-0 overflow-x-auto no-scrollbar">
-                                {Phases.map(p => (
-                                    <button
-                                        key={p.id}
-                                        id={p.id === 'briefing' ? 'tour-briefing-tab' : p.id === 'diagnosis' ? 'tour-diagnosis-tab' : 'tour-workbench-tab'}
-                                        onClick={() => setPhase(p.id)}
-                                        className={clsx(
-                                            "flex items-center gap-2 px-4 py-3 rounded-t-lg text-sm font-bold transition-all border-t border-x relative -mb-px",
-                                            phase === p.id
-                                                ? "bg-white border-gray-200 text-indigo-700 z-10"
-                                                : "bg-gray-100 border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-200"
-                                        )}
-                                    >
-                                        <p.icon className="w-4 h-4" />
-                                        {p.label}
-                                    </button>
-                                ))}
+                            <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 pt-4 shrink-0 overflow-x-auto no-scrollbar">
+                                <div className="flex gap-2">
+                                    {Phases.map(p => (
+                                        <button
+                                            key={p.id}
+                                            id={p.id === 'briefing' ? 'tour-briefing-tab' : p.id === 'diagnosis' ? 'tour-diagnosis-tab' : 'tour-workbench-tab'}
+                                            onClick={() => setPhase(p.id)}
+                                            className={clsx(
+                                                "flex items-center gap-2 px-4 py-3 rounded-t-lg text-sm font-bold transition-all border-t border-x relative -mb-px",
+                                                phase === p.id
+                                                    ? "bg-white border-gray-200 text-indigo-700 z-10"
+                                                    : "bg-gray-100 border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+                                            )}
+                                        >
+                                            <p.icon className="w-4 h-4" />
+                                            {p.label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {studentName && (
+                                    <div className="flex items-center gap-4 text-sm font-medium mb-0 pr-2 pb-2">
+                                        <div className="flex items-center gap-1.5 text-gray-400 hidden sm:flex bg-gray-200/50 px-2.5 py-1 rounded-full border border-gray-200/50">
+                                            <User className="w-3 h-3" />
+                                            <span className="text-gray-600 font-semibold">{studentName}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setShowTeacherPinModal(true);
+                                                setIsSidebarOpen(false);
+                                            }}
+                                            className="flex items-center gap-1.5 text-gray-500 hover:text-indigo-600 transition-colors"
+                                            title="Lehrer-Dashboard öffnen"
+                                        >
+                                            <Shield className="w-4 h-4" />
+                                            <span className="hidden sm:inline-block">Lehrer</span>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (confirm("Möchtest du dich wirklich abmelden? Dein Fortschritt bleibt in der Cloud gespeichert.")) {
+                                                    logoutStudent();
+                                                }
+                                            }}
+                                            className="flex items-center gap-1.5 text-gray-500 hover:text-red-500 transition-colors"
+                                            title="Vom aktuellen Profil abmelden"
+                                        >
+                                            <X className="w-4 h-4" />
+                                            <span className="hidden sm:inline-block">Abmelden</span>
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="flex-1 overflow-hidden relative bg-white">
-                                <div key={phase} className="h-full w-full animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out">
+                            <div className="flex-1 min-h-0 relative bg-white overflow-y-auto overflow-x-hidden">
+                                <div key={phase} className="h-full min-h-max w-full animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out">
                                     {renderPhase(phase, currentScenario, setPhase, addMistake)}
                                 </div>
                             </div>

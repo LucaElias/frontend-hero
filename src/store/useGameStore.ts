@@ -131,7 +131,8 @@ export const useGameStore = create<GameState>()(
                                 studentName: name,
                                 sessionId: combinedId,
                                 completedScenarios: data.completed_ids || [],
-                                hasSeenTutorial: (data.completed_ids || []).includes('0-tutorial')
+                                hasSeenTutorial: (data.completed_ids || []).includes('0-tutorial'),
+                                phase: 'briefing'
                             });
                             return;
                         }
@@ -141,7 +142,8 @@ export const useGameStore = create<GameState>()(
                         studentName: name,
                         sessionId: combinedId,
                         completedScenarios: [],
-                        hasSeenTutorial: false
+                        hasSeenTutorial: false,
+                        phase: 'briefing'
                     });
                     get().syncProgress?.();
                 } catch {
@@ -149,7 +151,8 @@ export const useGameStore = create<GameState>()(
                         studentName: name,
                         sessionId: combinedId,
                         completedScenarios: [],
-                        hasSeenTutorial: false
+                        hasSeenTutorial: false,
+                        phase: 'briefing'
                     });
                     get().syncProgress?.();
                 }
